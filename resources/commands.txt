@@ -1,0 +1,33 @@
+sudo chmod –m777 tmp
+sudo chmod –m777 zoo_logs
+sudo mkdir –m777 kafka_logs
+
+dataDir=/usr/local/kafka_2.13-2.4.0/tmp/zoo_logs
+log.dirs=/usr/local/kafka_2.13-2.4.0/tmp/kafka_logs
+
+cd /usr/local/kafka_2.13-2.4.0
+
+bin/zookeeper-server-start.sh config/zookeeper.properties
+bin/kafka-server-start.sh config/server.properties
+
+bin/kafka-topics.sh --list --zookeeper localhost:2181
+bin/kafka-topics.sh --zookeeper localhost:2181 --topic first_topic --create --partitions 3 --replication-factor 1
+bin/kafka-topics.sh --zookeeper localhost:2181 --topic first_topic --describe
+
+bin/kafka-console-producer.sh --broker-list localhost:9092 --topic first_topic
+bin/kafka-console-producer.sh --broker-list localhost:9092 --topic first_topic --producer-property acks=all
+
+bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic first_topic
+bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic first_topic --from-beginning
+bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic first_topic --group first_application
+
+bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --group first_application --describe
+bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --list
+bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --group first_application --reset-offsets --to-earliest --execute --topic first_topic
+bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --group first_application --reset-offsets --shift-by -2 --execute --topic first_topic
+
+kafka-console-producer --broker-list 127.0.0.1:9092 --topic first_topic --property parse.key=true --property key.separator=,
+> key,value
+> another key,another value
+
+kafka-console-consumer --bootstrap-server 127.0.0.1:9092 --topic first_topic --from-beginning --property print.key=true --property key.separator=,
