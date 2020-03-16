@@ -11,6 +11,7 @@ import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,14 +23,15 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 public class TwitterProducer {
-    Logger LOGGER = LoggerFactory.getLogger(TwitterProducer.class.getName());
+    private Logger LOGGER = LoggerFactory.getLogger(TwitterProducer.class.getName());
 
-    String apiKey;
-    String apiSecretKey;
-    String accessToken;
-    String accessTokenSecret;
+    private String apiKey;
+    private String apiSecretKey;
+    private String accessToken;
+    private String accessTokenSecret;
 
     public TwitterProducer() {
         Properties props;
@@ -61,7 +63,7 @@ public class TwitterProducer {
         return prop;
     }
 
-    public KafkaProducer<String, String> createProducer(){
+    public KafkaProducer<String, String> createProducer() {
         Properties prop = new Properties();
         prop.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         prop.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
@@ -70,10 +72,7 @@ public class TwitterProducer {
         return new KafkaProducer(prop);
     }
 
-    public Client createClient(){
-        // Set up your blocking queues: Be sure to size these properly based on expected TPS of your stream */
-        BlockingQueue<String> msgQueue = new LinkedBlockingQueue<String>(1000);
-
+    public Client createClient(BlockingQueue<String> msgQueue) {
         Hosts hosebirdHosts = new HttpHosts(Constants.STREAM_HOST);
         StatusesFilterEndpoint hosebirdEndpoint = new StatusesFilterEndpoint();
         hosebirdEndpoint.trackTerms(List.of("kafka"));
@@ -90,17 +89,47 @@ public class TwitterProducer {
         return builder.build();
     }
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
         TwitterProducer tp = new TwitterProducer();
-        Client hosebirdClient = tp.createClient();
+
         KafkaProducer<String, String> producer = tp.createProducer();
 
-        System.out.println(hosebirdClient);
-        System.out.println(producer);
+        // size the queue properly based on expected TPS of your stream
+        BlockingQueue<String> mq = new LinkedBlockingQueue<>(1000);
+        Client hosebirdClient = tp.createClient(mq);
+        hosebirdClient.connect();
 
-        hosebirdClient.stop();
-        producer.close();
+        // shut down hook
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            hosebirdClient.stop();
+            producer.close();
+            tp.LOGGER.info("Shutdown hook done");
+        }));
+
+        while (!hosebirdClient.isDone()) {
+            String msg = null;
+            try {
+                msg = mq.poll(5, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                tp.LOGGER.error("Exception while polling queue", e);
+                hosebirdClient.stop();
+            }
+
+            if (msg != null) {
+                ProducerRecord<String, String> record = new ProducerRecord<>("tweets", msg);
+                producer.send(record, (recordMetadata, e) -> {
+                    if (e == null) {
+                        tp.LOGGER.info("Received metadata\n Topic " + recordMetadata.topic()
+                                + "\n Partition " + recordMetadata.partition()
+                                + "\n Offset " + recordMetadata.offset()
+                                + "\n Timestamp " + recordMetadata.timestamp());
+                    } else {
+                        tp.LOGGER.error("Exception while sending record", e);
+                    }
+                });
+            }
+        }
+        tp.LOGGER.info("End of processing.");
     }
-
 
 }
