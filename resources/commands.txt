@@ -1,3 +1,26 @@
+----------------------------------------------------------------------------------------
+-------------------------------   WINDOWS   --------------------------------------------
+----------------------------------------------------------------------------------------
+
+
+zookeeper-server-start.bat c:\PROGRA~1\kafka_2.11-0.10.0.0\config\zookeeper.properties
+kafka-server-start.bat c:\PROGRA~1\kafka_2.11-0.10.0.0\config\server.properties
+
+kafka-topics.bat --list --zookeeper localhost:2181
+kafka-topics.bat --zookeeper localhost:2181 --topic first_topic --create --partitions 3 --replication-factor 1
+kafka-topics.bat --zookeeper localhost:2181 --topic first_topic --describe
+
+kafka-console-producer --broker-list localhost:9092 --topic first_topic
+kafka-console-producer --broker-list localhost:9092 --topic first_topic --producer-property acks=all
+
+kafka-console-consumer --bootstrap-server localhost:9092 --zookeeper localhost:2181 --topic first_topic
+kafka-console-consumer --bootstrap-server localhost:9092 --zookeeper localhost:2181 --topic first_topic --from-beginning
+kafka-console-consumer --bootstrap-server localhost:9092 --zookeeper localhost:2181 --topic first_topic --property group.id=first_application
+
+----------------------------------------------------------------------------------------
+------------------------------------------  LINUX  -------------------------------------
+----------------------------------------------------------------------------------------
+
 sudo chmod –m777 tmp
 sudo chmod –m777 zoo_logs
 sudo mkdir –m777 kafka_logs
@@ -31,3 +54,4 @@ kafka-console-producer --broker-list 127.0.0.1:9092 --topic first_topic --proper
 > another key,another value
 
 kafka-console-consumer --bootstrap-server 127.0.0.1:9092 --topic first_topic --from-beginning --property print.key=true --property key.separator=,
+
