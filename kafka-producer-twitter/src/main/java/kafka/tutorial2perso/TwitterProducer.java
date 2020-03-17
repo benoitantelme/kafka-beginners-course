@@ -68,7 +68,11 @@ public class TwitterProducer {
         prop.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         prop.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         prop.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        
+
+        // can not set indempotent on win
+        //        org.apache.kafka.common.errors.UnsupportedVersionException: Attempting to use idempotence with a broker which does not
+        //        support the required message format (v2). The broker must be version 0.11 or later.
+        //        prop.setProperty(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true");
         prop.setProperty(ProducerConfig.ACKS_CONFIG, "all");
         prop.setProperty(ProducerConfig.RETRIES_CONFIG, "5");
 
