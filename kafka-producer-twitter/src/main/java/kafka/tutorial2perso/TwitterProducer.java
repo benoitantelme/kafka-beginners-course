@@ -68,6 +68,9 @@ public class TwitterProducer {
         prop.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         prop.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         prop.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        
+        prop.setProperty(ProducerConfig.ACKS_CONFIG, "all");
+        prop.setProperty(ProducerConfig.RETRIES_CONFIG, "5");
 
         return new KafkaProducer(prop);
     }
@@ -75,7 +78,7 @@ public class TwitterProducer {
     public Client createClient(BlockingQueue<String> msgQueue) {
         Hosts hosebirdHosts = new HttpHosts(Constants.STREAM_HOST);
         StatusesFilterEndpoint hosebirdEndpoint = new StatusesFilterEndpoint();
-        hosebirdEndpoint.trackTerms(List.of("kafka"));
+        hosebirdEndpoint.trackTerms(List.of("kafka", "twitter", "covid"));
 
         Authentication hosebirdAuth = new OAuth1(apiKey, apiSecretKey, accessToken, accessTokenSecret);
 
