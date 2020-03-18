@@ -1,0 +1,27 @@
+
+# status of the cluster
+GET/_cat/health?v
+
+# nodes info
+GET/_cat/nodes?v
+
+# where the data is stored
+GET/_cat/indices?v
+
+# create index for twitter
+PUT/twitter
+
+#adding a document
+PUT/twitter/tweets/1
+{
+  "course": "Kafka simple",
+  "module": "ElasticSearch"
+}
+
+#getting a document
+GET/twitter/tweets/1
+
+#delete a document
+DELETE/twitter/tweets/1
+
+
