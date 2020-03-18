@@ -17,6 +17,9 @@ kafka-console-consumer --bootstrap-server localhost:9092 --zookeeper localhost:2
 kafka-console-consumer --bootstrap-server localhost:9092 --zookeeper localhost:2181 --topic first_topic --from-beginning
 kafka-console-consumer --bootstrap-server localhost:9092 --zookeeper localhost:2181 --topic first_topic --property group.id=first_application
 
+kafka-consumer-groups --zookeeper localhost:2181 --group kafka_demo_elasticsearch --describe
+
+
 ----------------------------------------------------------------------------------------
 ------------------------------------------  LINUX  -------------------------------------
 ----------------------------------------------------------------------------------------
